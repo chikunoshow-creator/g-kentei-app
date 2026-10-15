@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>G検定 突破マスター</title>
+  
+  <!-- PWA設定 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="G検定マスター">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>G検定 突破マスター</h1>
+    </header>
+
+    <!-- 1. ホーム画面 -->
+    <main id="screen-home" class="card">
+      <div class="hero-stat">
+        <div class="stat-box">
+          <div class="num" id="total-pool-count">0</div>
+          <div class="label">収録問題数</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" id="wrong-count" style="color: var(--danger);">0</div>
+          <div class="label">要復習（ミス）</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn btn-primary" onclick="app.startQuiz('random')">
+          ⚡️ ランダム10問スタート
+        </button>
+        <button id="btn-review" class="btn btn-secondary" onclick="app.startQuiz('review')">
+          📝 間違えた問題を復習する
+        </button>
+      </div>
+
+      <div style="margin-top: 24px; text-align: center;">
+        <button class="btn-danger-outline" onclick="app.clearWrongHistory()">
+          復習履歴をリセット
+        </button>
+      </div>
+    </main>
+
+    <!-- 2. クイズ画面 -->
+    <main id="screen-quiz" class="card hidden">
+      <div class="quiz-meta">
+        <span id="quiz-mode-label">ランダム演習</span>
+        <span id="quiz-progress-text">1 / 10</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div id="quiz-progress-bar" class="progress-bar-fill"></div>
+      </div>
+
+      <div id="question-text" class="question-title">問題文がここに入ります</div>
+      <div id="options-container" class="options-list"></div>
+
+      <!-- 解説ボックス -->
+      <div id="explanation-container" class="explanation-box">
+        <div id="explanation-judgement" class="explanation-badge"></div>
+        <div id="explanation-text" class="explanation-text"></div>
+      </div>
+
+      <button id="btn-next" class="btn btn-primary hidden" onclick="app.nextQuestion()">
+        次の問題へ →
+      </button>
+    </main>
+
+    <!-- 3. 結果画面 -->
+    <main id="screen-result" class="card hidden">
+      <div style="text-align: center; font-weight: 700; color: var(--text-muted);">RESULT</div>
+      <div class="result-score" id="result-score-text">0 / 10</div>
+      <div class="result-comment" id="result-comment-text">ナイスファイトです、ボス！</div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button id="btn-result-review" class="btn btn-secondary" onclick="app.startQuiz('review')">
+          間違えた問題を今すぐ復習
+        </button>
+        <button class="btn btn-primary" onclick="app.showHome()">
+          ホームに戻る
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+
+  <!-- Service Worker登録 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('PWA Service Worker registered:', reg.scope))
+          .catch((err) => console.log('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
