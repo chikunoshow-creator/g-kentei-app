@@ -6,7 +6,7 @@ class QuizApp {
     this.currentIndex = 0;
     this.score = 0;
     this.isAnswered = false;
-    this.sessionAnswers = []; // 今回の回答履歴を記録する配列
+    this.sessionAnswers = [];
 
     this.initDOM();
     this.updateHomeStats();
@@ -18,6 +18,15 @@ class QuizApp {
       quiz: document.getElementById('screen-quiz'),
       result: document.getElementById('screen-result')
     };
+    this.toastEl = document.getElementById('toast');
+  }
+
+  showToast(message) {
+    this.toastEl.textContent = message;
+    this.toastEl.classList.add('show');
+    setTimeout(() => {
+      this.toastEl.classList.remove('show');
+    }, 2500);
   }
 
   getWrongIds() {
@@ -44,7 +53,6 @@ class QuizApp {
     }
   }
 
-  // 手動で強制キャッシュクリア＆最新化
   async forceUpdateApp() {
     if ('caches' in window) {
       const keys = await caches.keys();
@@ -90,7 +98,7 @@ class QuizApp {
     this.currentMode = mode;
     this.currentIndex = 0;
     this.score = 0;
-    this.sessionAnswers = []; // 解答ログをリセット
+    this.sessionAnswers = [];
 
     if (mode === 'random') {
       const shuffled = [...QUESTIONS].sort(() => 0.5 - Math.random());
@@ -143,7 +151,6 @@ class QuizApp {
     const isCorrect = selectedIndex === q.answer;
     const optionButtons = document.querySelectorAll('.option-btn');
 
-    // 解答履歴を記録
     this.sessionAnswers.push({
       question: q.question,
       options: q.options,
@@ -177,6 +184,7 @@ class QuizApp {
 
     expJudge.textContent = isCorrect ? '正解！ 見事です！' : '不正解… ここで定着させましょう！';
     expJudge.className = `explanation-badge ${isCorrect ? 'correct' : 'wrong'}`;
+    expText.style.whiteSpace = 'pre-line';
     expText.textContent = q.explanation;
     expBox.style.display = 'block';
 
@@ -214,11 +222,9 @@ class QuizApp {
     const reviewBtn = document.getElementById('btn-result-review');
     reviewBtn.style.display = wrongIds.length > 0 ? 'block' : 'none';
 
-    // 回答一覧を生成
     this.renderReviewList();
   }
 
-  // ★回答一覧の描画
   renderReviewList() {
     const container = document.getElementById('review-list-container');
     container.innerHTML = '';
@@ -247,6 +253,71 @@ class QuizApp {
       `;
       container.appendChild(item);
     });
+  }
+
+  // ★AI（かんなさん）に投げる用のテキストを自動生成
+  generateAITextReport() {
+    const total = this.activeQuestions.length;
+    const rate = Math.round((this.score / total) * 100);
+    const badges = ['A', 'B', 'C', 'D'];
+
+    let report = `【G検定 演習結果レポート】\n`;
+    report += `モード: ${this.currentMode === 'random' ? 'ランダム演習' : '間違えた問題の復習'}\n`;
+    report += `スコア: ${this.score} / ${total} 問 (正解率: ${rate}%)\n\n`;
+    report += `--- 各問の回答詳細 ---\n`;
+
+    this.sessionAnswers.forEach((ans, idx) => {
+      report += `\n[Q${idx + 1}] ${ans.isCorrect ? '⭕️ 正解' : '❌ 不正解'}\n`;
+      report += `問題: ${ans.question}\n`;
+      report += `回答: ${badges[ans.selectedIndex]}. ${ans.options[ans.selectedIndex]}\n`;
+      if (!ans.isCorrect) {
+        report += `正解: ${badges[ans.correctIndex]}. ${ans.options[ans.correctIndex]}\n`;
+      }
+      report += `解説:\n${ans.explanation}\n`;
+    });
+
+    report += `\n----------------------\n`;
+    report += `※この結果を元に、苦手分野の分析と今後の学習アドバイスをお願いします！`;
+    return report;
+  }
+
+  // クリップボードへ直接コピー（ファイル保存完全ゼロ！）
+  async copyResultForAI() {
+    const text = this.generateAITextReport();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // フォールバック
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      this.showToast('📋 コピー完了！ AIに貼り付けてね');
+    } catch (err) {
+      alert('コピーに失敗しました。ブラウザの共有機能をお試しください。');
+    }
+  }
+
+  // スマホ標準の共有シートを呼び出す（ファイル保存ゼロ！）
+  async shareResultForAI() {
+    const text = this.generateAITextReport();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'G検定 演習結果レポート',
+          text: text
+        });
+      } catch (err) {
+        // ユーザーキャンセル時は何もしない
+      }
+    } else {
+      // 非対応環境ならコピーに自動切り替え
+      this.copyResultForAI();
+    }
   }
 }
 

@@ -83,7 +83,15 @@
       <div class="result-score" id="result-score-text">0 / 10</div>
       <div class="result-comment" id="result-comment-text">ナイスファイトです！</div>
 
-      <div style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- アクションボタン群 -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- ★AI連携用ボタン（ファイル保存ゼロ！） -->
+        <button class="btn btn-ai" onclick="app.copyResultForAI()">
+          📋 結果テキストをコピー（AI分析用）
+        </button>
+        <button class="btn btn-secondary" onclick="app.shareResultForAI()">
+          📤 アプリに直接共有
+        </button>
         <button id="btn-result-review" class="btn btn-secondary" onclick="app.startQuiz('review')">
           間違えた問題を今すぐ復習
         </button>
@@ -92,7 +100,7 @@
         </button>
       </div>
 
-      <!-- ★追加：今回の回答振り返り一覧 -->
+      <!-- 今回の回答振り返り一覧 -->
       <section class="review-section">
         <div class="review-header">
           <span>今回の回答一覧・解説</span>
@@ -102,26 +110,23 @@
     </main>
   </div>
 
+  <!-- トースト通知用要素 -->
+  <div id="toast" class="toast">コピーしました！</div>
+
   <script src="questions.js"></script>
   <script src="app.js"></script>
 
-  <!-- PWA Service Worker強制即時更新スクリプト -->
+  <!-- Service Worker強制即時更新スクリプト -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then((registration) => {
-          // 起動時に更新があるかチェック
           registration.update();
-
-          // 新しいService Workerが待機中になったら即適用
           registration.addEventListener('updatefound', () => {
             const installingWorker = registration.installing;
             installingWorker.onstatechange = () => {
-              if (installingWorker.state === 'installed') {
-                if (navigator.serviceWorker.controller) {
-                  // 新しいキャッシュを反映させるため自動リロード
-                  window.location.reload();
-                }
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                window.location.reload();
               }
             };
           });

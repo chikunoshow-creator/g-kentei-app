@@ -6,6 +6,8 @@
   --success-light: #ecfdf5;
   --danger: #ef4444;
   --danger-light: #fef2f2;
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
   --bg: #f8fafc;
   --card-bg: #ffffff;
   --text: #0f172a;
@@ -75,6 +77,18 @@ header h1 {
 .btn-primary:active { background: var(--primary-hover); transform: scale(0.98); }
 .btn-secondary { background: #f1f5f9; color: var(--text); }
 .btn-secondary:active { background: #e2e8f0; transform: scale(0.98); }
+
+/* AI連携用の目立つグラデーションボタン */
+.btn-ai {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+.btn-ai:active {
+  transform: scale(0.98);
+  opacity: 0.95;
+}
+
 .btn-sub-link {
   background: transparent;
   border: none;
@@ -194,9 +208,9 @@ header h1 {
 .explanation-text { font-size: 0.9rem; color: #334155; line-height: 1.6; }
 
 .result-score { font-size: 3rem; font-weight: 900; color: var(--primary); text-align: center; margin: 10px 0; }
-.result-comment { text-align: center; font-weight: 700; margin-bottom: 24px; color: var(--text-muted); }
+.result-comment { text-align: center; font-weight: 700; margin-bottom: 20px; color: var(--text-muted); }
 
-/* --- 振り返り一覧用スタイル --- */
+/* --- 振り返り一覧スタイル --- */
 .review-section {
   margin-top: 28px;
   border-top: 2px dashed var(--border);
@@ -256,6 +270,31 @@ header h1 {
   background: #f1f5f9;
   padding: 10px;
   border-radius: 8px;
+}
+
+/* トースト通知 */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 9999;
+  text-align: center;
+  white-space: nowrap;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
 .hidden { display: none !important; }
