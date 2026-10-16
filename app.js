@@ -79,7 +79,7 @@ class QuizApp {
     } else if (mode === 'review') {
       const wrongIds = this.getWrongIds();
       if (wrongIds.length === 0) {
-        alert('現在、復習対象の問題はありません！完璧です、ボス。');
+        alert('現在、復習対象の問題はありません。完璧です！');
         return;
       }
       this.activeQuestions = QUESTIONS.filter(q => wrongIds.includes(q.id));
@@ -146,8 +146,12 @@ class QuizApp {
     const expJudge = document.getElementById('explanation-judgement');
     const expText = document.getElementById('explanation-text');
 
-    expJudge.textContent = isCorrect ? '正解！ お見事です、ボス。' : '不正解… ここで定着させましょう！';
+    // 一般向けのメッセージに変更
+    expJudge.textContent = isCorrect ? '正解！ 見事です！' : '不正解… ここで定着させましょう！';
     expJudge.className = `explanation-badge ${isCorrect ? 'correct' : 'wrong'}`;
+    
+    // 改行を正しく反映
+    expText.style.whiteSpace = 'pre-line';
     expText.textContent = q.explanation;
     expBox.style.display = 'block';
 
@@ -170,14 +174,15 @@ class QuizApp {
     const total = this.activeQuestions.length;
     document.getElementById('result-score-text').textContent = `${this.score} / ${total}`;
 
+    // 一般向けの判定コメント
     let comment = '';
     const rate = this.score / total;
     if (rate === 1) {
-      comment = 'パーフェクト！完璧です、ボス！';
+      comment = '全問正解！完璧な理解度です！';
     } else if (rate >= 0.7) {
-      comment = '合格ライン突破！素晴らしいペースです。';
+      comment = '合格ライン到達！この調子で進めましょう。';
     } else {
-      comment = '間違えた問題をしっかり復習して定着させましょう！';
+      comment = '間違えた問題をしっかり復習して知識を定着させましょう！';
     }
     document.getElementById('result-comment-text').textContent = comment;
 
@@ -187,5 +192,4 @@ class QuizApp {
   }
 }
 
-// 起動
 const app = new QuizApp();
