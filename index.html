@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>G検定 突破マスター</title>
   
-  <!-- PWA設定 -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -44,8 +43,11 @@
         </button>
       </div>
 
-      <div style="margin-top: 24px; text-align: center;">
-        <button class="btn-danger-outline" onclick="app.clearWrongHistory()">
+      <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn-sub-link" onclick="app.forceUpdateApp()">
+          🔄 最新版に強制更新
+        </button>
+        <button class="btn-sub-link" style="color: var(--danger);" onclick="app.clearWrongHistory()">
           復習履歴をリセット
         </button>
       </div>
@@ -79,7 +81,7 @@
     <main id="screen-result" class="card hidden">
       <div style="text-align: center; font-weight: 700; color: var(--text-muted);">RESULT</div>
       <div class="result-score" id="result-score-text">0 / 10</div>
-      <div class="result-comment" id="result-comment-text">ナイスファイトです、ボス！</div>
+      <div class="result-comment" id="result-comment-text">ナイスファイトです！</div>
 
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <button id="btn-result-review" class="btn btn-secondary" onclick="app.startQuiz('review')">
@@ -89,19 +91,41 @@
           ホームに戻る
         </button>
       </div>
+
+      <!-- ★追加：今回の回答振り返り一覧 -->
+      <section class="review-section">
+        <div class="review-header">
+          <span>今回の回答一覧・解説</span>
+        </div>
+        <div id="review-list-container" class="review-list"></div>
+      </section>
     </main>
   </div>
 
   <script src="questions.js"></script>
   <script src="app.js"></script>
 
-  <!-- Service Worker登録 -->
+  <!-- PWA Service Worker強制即時更新スクリプト -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then((reg) => console.log('PWA Service Worker registered:', reg.scope))
-          .catch((err) => console.log('Service Worker registration failed:', err));
+        navigator.serviceWorker.register('./sw.js').then((registration) => {
+          // 起動時に更新があるかチェック
+          registration.update();
+
+          // 新しいService Workerが待機中になったら即適用
+          registration.addEventListener('updatefound', () => {
+            const installingWorker = registration.installing;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  // 新しいキャッシュを反映させるため自動リロード
+                  window.location.reload();
+                }
+              }
+            };
+          });
+        });
       });
     }
   </script>

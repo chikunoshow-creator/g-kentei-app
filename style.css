@@ -29,7 +29,7 @@ body {
 }
 
 .container {
-  max-width: 520px;
+  max-width: 540px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
@@ -75,13 +75,14 @@ header h1 {
 .btn-primary:active { background: var(--primary-hover); transform: scale(0.98); }
 .btn-secondary { background: #f1f5f9; color: var(--text); }
 .btn-secondary:active { background: #e2e8f0; transform: scale(0.98); }
-.btn-danger-outline {
+.btn-sub-link {
   background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  font-size: 0.85rem;
-  padding: 8px 12px;
-  border-radius: 10px;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px;
 }
 
 .hero-stat {
@@ -194,6 +195,68 @@ header h1 {
 
 .result-score { font-size: 3rem; font-weight: 900; color: var(--primary); text-align: center; margin: 10px 0; }
 .result-comment { text-align: center; font-weight: 700; margin-bottom: 24px; color: var(--text-muted); }
+
+/* --- 振り返り一覧用スタイル --- */
+.review-section {
+  margin-top: 28px;
+  border-top: 2px dashed var(--border);
+  padding-top: 24px;
+}
+.review-header {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.review-item {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+.review-item.is-correct { border-left: 5px solid var(--success); }
+.review-item.is-wrong { border-left: 5px solid var(--danger); }
+.review-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.badge-correct { color: var(--success); }
+.badge-wrong { color: var(--danger); }
+.review-question-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.review-answer-box {
+  background: #ffffff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.review-exp {
+  font-size: 0.82rem;
+  color: #475569;
+  white-space: pre-line;
+  line-height: 1.5;
+  background: #f1f5f9;
+  padding: 10px;
+  border-radius: 8px;
+}
 
 .hidden { display: none !important; }
 

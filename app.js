@@ -6,6 +6,7 @@ class QuizApp {
     this.currentIndex = 0;
     this.score = 0;
     this.isAnswered = false;
+    this.sessionAnswers = []; // 今回の回答履歴を記録する配列
 
     this.initDOM();
     this.updateHomeStats();
@@ -43,9 +44,26 @@ class QuizApp {
     }
   }
 
+  // 手動で強制キャッシュクリア＆最新化
+  async forceUpdateApp() {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+    alert('最新のキャッシュを再読み込みします！');
+    window.location.reload(true);
+  }
+
   switchScreen(screenName) {
     Object.values(this.screens).forEach(el => el.classList.add('hidden'));
     this.screens[screenName].classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   updateHomeStats() {
@@ -72,6 +90,7 @@ class QuizApp {
     this.currentMode = mode;
     this.currentIndex = 0;
     this.score = 0;
+    this.sessionAnswers = []; // 解答ログをリセット
 
     if (mode === 'random') {
       const shuffled = [...QUESTIONS].sort(() => 0.5 - Math.random());
@@ -124,6 +143,16 @@ class QuizApp {
     const isCorrect = selectedIndex === q.answer;
     const optionButtons = document.querySelectorAll('.option-btn');
 
+    // 解答履歴を記録
+    this.sessionAnswers.push({
+      question: q.question,
+      options: q.options,
+      selectedIndex: selectedIndex,
+      correctIndex: q.answer,
+      isCorrect: isCorrect,
+      explanation: q.explanation
+    });
+
     optionButtons.forEach((btn, idx) => {
       btn.disabled = true;
       if (idx === q.answer) {
@@ -146,12 +175,8 @@ class QuizApp {
     const expJudge = document.getElementById('explanation-judgement');
     const expText = document.getElementById('explanation-text');
 
-    // 一般向けのメッセージに変更
     expJudge.textContent = isCorrect ? '正解！ 見事です！' : '不正解… ここで定着させましょう！';
     expJudge.className = `explanation-badge ${isCorrect ? 'correct' : 'wrong'}`;
-    
-    // 改行を正しく反映
-    expText.style.whiteSpace = 'pre-line';
     expText.textContent = q.explanation;
     expBox.style.display = 'block';
 
@@ -174,7 +199,6 @@ class QuizApp {
     const total = this.activeQuestions.length;
     document.getElementById('result-score-text').textContent = `${this.score} / ${total}`;
 
-    // 一般向けの判定コメント
     let comment = '';
     const rate = this.score / total;
     if (rate === 1) {
@@ -189,6 +213,40 @@ class QuizApp {
     const wrongIds = this.getWrongIds();
     const reviewBtn = document.getElementById('btn-result-review');
     reviewBtn.style.display = wrongIds.length > 0 ? 'block' : 'none';
+
+    // 回答一覧を生成
+    this.renderReviewList();
+  }
+
+  // ★回答一覧の描画
+  renderReviewList() {
+    const container = document.getElementById('review-list-container');
+    container.innerHTML = '';
+    const badges = ['A', 'B', 'C', 'D'];
+
+    this.sessionAnswers.forEach((ans, index) => {
+      const item = document.createElement('div');
+      item.className = `review-item ${ans.isCorrect ? 'is-correct' : 'is-wrong'}`;
+
+      const userChoiceText = `${badges[ans.selectedIndex]}: ${ans.options[ans.selectedIndex]}`;
+      const correctChoiceText = `${badges[ans.correctIndex]}: ${ans.options[ans.correctIndex]}`;
+
+      item.innerHTML = `
+        <div class="review-meta">
+          <span>Q${index + 1}</span>
+          <span class="${ans.isCorrect ? 'badge-correct' : 'badge-wrong'}">
+            ${ans.isCorrect ? '⭕️ 正解' : '❌ 不正解'}
+          </span>
+        </div>
+        <div class="review-question-text">${ans.question}</div>
+        <div class="review-answer-box">
+          <div><strong>あなたの回答:</strong> <span style="color: ${ans.isCorrect ? 'var(--success)' : 'var(--danger)'}">${userChoiceText}</span></div>
+          ${!ans.isCorrect ? `<div><strong>正解:</strong> <span style="color: var(--success); font-weight: bold;">${correctChoiceText}</span></div>` : ''}
+        </div>
+        <div class="review-exp">${ans.explanation}</div>
+      `;
+      container.appendChild(item);
+    });
   }
 }
 
