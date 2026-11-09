@@ -19,104 +19,158 @@
   <div class="container">
     <header>
       <h1>G検定 突破マスター</h1>
+      <!-- メインタブ切り替え -->
+      <nav class="nav-tabs">
+        <button id="tab-btn-quiz" class="nav-tab-btn active" onclick="app.switchMainTab('quiz')">
+          📝 問題集
+        </button>
+        <button id="tab-btn-terms" class="nav-tab-btn" onclick="app.switchMainTab('terms')">
+          📖 単語帳
+        </button>
+      </nav>
     </header>
 
-    <!-- 1. ホーム画面 -->
-    <main id="screen-home" class="card">
-      <div class="hero-stat">
-        <div class="stat-box">
-          <div class="num" id="total-pool-count">0</div>
-          <div class="label">収録問題数</div>
+    <!-- ==================== 【A】問題集セクション ==================== -->
+    <div id="section-quiz">
+      <!-- 1. ホーム画面 -->
+      <main id="screen-home" class="card">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="num" id="total-pool-count">0</div>
+            <div class="label">収録問題</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="stat-weak-count" style="color: var(--danger);">0</div>
+            <div class="label">要対策（苦手）</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="stat-master-count" style="color: var(--success);">0</div>
+            <div class="label">得意（80%↑）</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="stat-answered-count" style="color: var(--primary);">0</div>
+            <div class="label">演習済み</div>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="num" id="wrong-count" style="color: var(--danger);">0</div>
-          <div class="label">要復習（ミス）</div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn btn-primary" onclick="app.startQuiz('random')">
+            ⚡️ ランダム10問スタート
+          </button>
+          <button id="btn-weak" class="btn btn-warning" onclick="app.startQuiz('weak')">
+            ⚠️ 苦手特訓モード (正答率<60%)
+          </button>
+          <button id="btn-review" class="btn btn-secondary" onclick="app.startQuiz('wrong')">
+            ❌ 直近ミス問題を復習
+          </button>
         </div>
-      </div>
 
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <button class="btn btn-primary" onclick="app.startQuiz('random')">
-          ⚡️ ランダム10問スタート
-        </button>
-        <button id="btn-review" class="btn btn-secondary" onclick="app.startQuiz('review')">
-          📝 間違えた問題を復習する
-        </button>
-      </div>
-
-      <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
-        <button class="btn-sub-link" onclick="app.forceUpdateApp()">
-          🔄 最新版に強制更新
-        </button>
-        <button class="btn-sub-link" style="color: var(--danger);" onclick="app.clearWrongHistory()">
-          復習履歴をリセット
-        </button>
-      </div>
-    </main>
-
-    <!-- 2. クイズ画面 -->
-    <main id="screen-quiz" class="card hidden">
-      <div class="quiz-meta">
-        <span id="quiz-mode-label">ランダム演習</span>
-        <span id="quiz-progress-text">1 / 10</span>
-      </div>
-      <div class="progress-bar-bg">
-        <div id="quiz-progress-bar" class="progress-bar-fill"></div>
-      </div>
-
-      <div id="question-text" class="question-title">問題文がここに入ります</div>
-      <div id="options-container" class="options-list"></div>
-
-      <!-- 解説ボックス -->
-      <div id="explanation-container" class="explanation-box">
-        <div id="explanation-judgement" class="explanation-badge"></div>
-        <div id="explanation-text" class="explanation-text"></div>
-      </div>
-
-      <button id="btn-next" class="btn btn-primary hidden" onclick="app.nextQuestion()">
-        次の問題へ →
-      </button>
-    </main>
-
-    <!-- 3. 結果画面 -->
-    <main id="screen-result" class="card hidden">
-      <div style="text-align: center; font-weight: 700; color: var(--text-muted);">RESULT</div>
-      <div class="result-score" id="result-score-text">0 / 10</div>
-      <div class="result-comment" id="result-comment-text">ナイスファイトです！</div>
-
-      <!-- アクションボタン群 -->
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <!-- ★AI連携用ボタン（ファイル保存ゼロ！） -->
-        <button class="btn btn-ai" onclick="app.copyResultForAI()">
-          📋 結果テキストをコピー（AI分析用）
-        </button>
-        <button class="btn btn-secondary" onclick="app.shareResultForAI()">
-          📤 アプリに直接共有
-        </button>
-        <button id="btn-result-review" class="btn btn-secondary" onclick="app.startQuiz('review')">
-          間違えた問題を今すぐ復習
-        </button>
-        <button class="btn btn-primary" onclick="app.showHome()">
-          ホームに戻る
-        </button>
-      </div>
-
-      <!-- 今回の回答振り返り一覧 -->
-      <section class="review-section">
-        <div class="review-header">
-          <span>今回の回答一覧・解説</span>
+        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <button class="btn-sub-link" onclick="app.forceUpdateApp()">
+            🔄 最新版に強制更新
+          </button>
+          <button class="btn-sub-link" style="color: var(--danger);" onclick="app.clearWrongHistory()">
+            学習履歴をリセット
+          </button>
         </div>
-        <div id="review-list-container" class="review-list"></div>
-      </section>
-    </main>
+      </main>
+
+      <!-- 2. クイズ画面 -->
+      <main id="screen-quiz" class="card hidden">
+        <div class="quiz-meta">
+          <span id="quiz-mode-label">ランダム演習</span>
+          <span id="quiz-progress-text">1 / 10</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="quiz-progress-bar" class="progress-bar-fill"></div>
+        </div>
+
+        <div id="question-text" class="question-title">問題文がここに入ります</div>
+        <div id="options-container" class="options-list"></div>
+
+        <!-- 解説ボックス -->
+        <div id="explanation-container" class="explanation-box">
+          <div id="explanation-judgement" class="explanation-badge"></div>
+          <div id="explanation-text" class="explanation-text"></div>
+        </div>
+
+        <button id="btn-next" class="btn btn-primary hidden" onclick="app.nextQuestion()">
+          次の問題へ →
+        </button>
+      </main>
+
+      <!-- 3. 結果画面 -->
+      <main id="screen-result" class="card hidden">
+        <div style="text-align: center; font-weight: 700; color: var(--text-muted);">RESULT</div>
+        <div class="result-score" id="result-score-text">0 / 10</div>
+        <div class="result-comment" id="result-comment-text">ナイスファイトです！</div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn btn-ai" onclick="app.copyResultForAI()">
+            📋 結果テキストをコピー（AI分析用）
+          </button>
+          <button class="btn btn-secondary" onclick="app.shareResultForAI()">
+            📤 アプリに直接共有
+          </button>
+          <button id="btn-result-review" class="btn btn-secondary" onclick="app.startQuiz('wrong')">
+            間違えた問題を今すぐ復習
+          </button>
+          <button class="btn btn-primary" onclick="app.showHome()">
+            ホームに戻る
+          </button>
+        </div>
+
+        <!-- 今回の回答振り返り一覧 -->
+        <section class="review-section">
+          <div class="review-header">
+            <span>今回の回答一覧・解説</span>
+          </div>
+          <div id="review-list-container" class="review-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ==================== 【B】単語帳セクション ==================== -->
+    <div id="section-terms" class="hidden">
+      <main class="card">
+        <!-- 検索・フィルターバー -->
+        <div class="terms-search-box">
+          <input type="text" id="terms-search-input" class="search-input" placeholder="🔍 用語や意味を検索..." oninput="app.renderTermsList()">
+        </div>
+
+        <div class="terms-filters">
+          <select id="terms-chapter-filter" class="filter-select" onchange="app.renderTermsList()">
+            <option value="all">すべての章</option>
+            <option value="1">第1章: 人工知能とは</option>
+          </select>
+          <select id="terms-status-filter" class="filter-select" onchange="app.renderTermsList()">
+            <option value="all">すべての単語</option>
+            <option value="unlearned">未習得のみ</option>
+            <option value="learned">習得済みのみ</option>
+          </select>
+        </div>
+
+        <div class="terms-summary">
+          <span id="terms-count-info">表示中: 0語</span>
+          <span id="terms-progress-info" style="color: var(--success); font-weight: bold;">習得率: 0%</span>
+        </div>
+
+        <!-- 単語カード一覧 -->
+        <div id="terms-card-list" class="terms-grid"></div>
+      </main>
+    </div>
+
   </div>
 
-  <!-- トースト通知用要素 -->
+  <!-- トースト通知 -->
   <div id="toast" class="toast">コピーしました！</div>
 
+  <!-- スクリプト読み込み -->
   <script src="questions.js"></script>
+  <script src="terms.js"></script>
   <script src="app.js"></script>
 
-  <!-- Service Worker強制即時更新スクリプト -->
+  <!-- PWA Service Worker強制更新 -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
