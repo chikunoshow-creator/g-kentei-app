@@ -9,7 +9,7 @@ class GKenteiMasterApp {
 
     this.currentMainTab = 'quiz';
     this.currentMode = 'random';
-    this.cardFrontMode = 'term'; // 'term' (表:用語) | 'meaning' (表:意味)
+    this.cardFrontMode = 'term';
     this.activeQuestions = [];
     this.currentIndex = 0;
     this.score = 0;
@@ -19,10 +19,10 @@ class GKenteiMasterApp {
     this.initDOM();
     this.updateHomeStats();
     
-    // 安全に単語帳を初期描画
+    // 安全に描画
     setTimeout(() => {
       this.renderTermsList();
-    }, 50);
+    }, 100);
   }
 
   initDOM() {
@@ -67,13 +67,19 @@ class GKenteiMasterApp {
     }
   }
 
-  // ==================== 成績＆履歴管理 ====================
+  // ==================== 安全なデータ取得（★ここを修正！） ====================
   getQuestions() {
-    return window.QUESTIONS || [];
+    try {
+      if (typeof QUESTIONS !== 'undefined') return QUESTIONS;
+    } catch (e) {}
+    return [];
   }
 
   getTerms() {
-    return window.TERMS || [];
+    try {
+      if (typeof TERMS !== 'undefined') return TERMS;
+    } catch (e) {}
+    return [];
   }
 
   getWrongIds() {
@@ -441,7 +447,7 @@ class GKenteiMasterApp {
     }
   }
 
-  // ==================== 【B】単語帳（3Dフリップ＆双方向） ====================
+  // ==================== 【B】単語帳 ====================
   getLearnedTermIds() {
     const data = localStorage.getItem(this.storageKeys.learnedTerms);
     return data ? JSON.parse(data) : [];
@@ -462,7 +468,6 @@ class GKenteiMasterApp {
     this.renderTermsList();
   }
 
-  // 表裏のモード反転（用語➔意味 ⇄ 意味➔用語）
   toggleCardMode() {
     this.cardFrontMode = (this.cardFrontMode === 'term') ? 'meaning' : 'term';
     const labelEl = document.getElementById('terms-mode-label');
@@ -507,25 +512,20 @@ class GKenteiMasterApp {
 
     filtered.forEach(item => {
       const isLearned = learnedIds.has(item.id);
-
-      // モードに応じた表面・裏面の内容決定
       const frontTitle = (this.cardFrontMode === 'term') ? item.term : item.meaning;
       const frontIsMeaning = (this.cardFrontMode === 'meaning');
       const backTitle = (this.cardFrontMode === 'term') ? item.meaning : item.term;
       const backIsMeaning = (this.cardFrontMode === 'term');
 
-      // 3Dラッパー
       const wrapper = document.createElement('div');
       wrapper.className = `flashcard-wrapper ${isLearned ? 'is-learned' : ''}`;
       
-      // クリックで3D裏返し！
       wrapper.onclick = () => {
         wrapper.classList.toggle('flipped');
       };
 
       wrapper.innerHTML = `
         <div class="flashcard-inner">
-          <!-- 表面 -->
           <div class="flashcard-face flashcard-front">
             <div class="card-top-row">
               <span class="term-chapter-badge">第${item.chapter}章</span>
@@ -540,7 +540,6 @@ class GKenteiMasterApp {
             </div>
           </div>
 
-          <!-- 裏面 -->
           <div class="flashcard-face flashcard-back">
             <div class="card-top-row">
               <span class="term-chapter-badge">第${item.chapter}章</span>
@@ -562,5 +561,5 @@ class GKenteiMasterApp {
   }
 }
 
-// グローバルにインスタンス展開
+// グローバル展開
 window.app = new GKenteiMasterApp();
