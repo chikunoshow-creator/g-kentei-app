@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gkentei-v3';
+const CACHE_NAME = 'gkentei-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

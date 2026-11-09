@@ -1,15 +1,15 @@
 class GKenteiMasterApp {
   constructor() {
-    // ストレージキー
     this.storageKeys = {
-      wrongIds: 'gkentei_wrong_ids',         // 直近不正解ID
-      stats: 'gkentei_question_stats',       // 問題別成績 { [id]: { answered: 0, correct: 0, rate: 0, status: '' } }
-      historySnapshots: 'gkentei_snapshots', // スナップショット履歴
-      learnedTerms: 'gkentei_terms_learned'  // 単語帳の習得IDリスト
+      wrongIds: 'gkentei_wrong_ids',
+      stats: 'gkentei_question_stats',
+      historySnapshots: 'gkentei_snapshots',
+      learnedTerms: 'gkentei_terms_learned'
     };
 
-    this.currentMainTab = 'quiz'; // 'quiz' | 'terms'
-    this.currentMode = 'random';  // 'random' | 'wrong' | 'weak'
+    this.currentMainTab = 'quiz';
+    this.currentMode = 'random';
+    this.cardFrontMode = 'term'; // 'term' (表:用語) | 'meaning' (表:意味)
     this.activeQuestions = [];
     this.currentIndex = 0;
     this.score = 0;
@@ -18,7 +18,11 @@ class GKenteiMasterApp {
 
     this.initDOM();
     this.updateHomeStats();
-    this.renderTermsList();
+    
+    // 安全に単語帳を初期描画
+    setTimeout(() => {
+      this.renderTermsList();
+    }, 50);
   }
 
   initDOM() {
@@ -39,6 +43,7 @@ class GKenteiMasterApp {
   }
 
   showToast(message) {
+    if (!this.toastEl) return;
     this.toastEl.textContent = message;
     this.toastEl.classList.add('show');
     setTimeout(() => this.toastEl.classList.remove('show'), 2500);
@@ -48,21 +53,29 @@ class GKenteiMasterApp {
   switchMainTab(tabName) {
     this.currentMainTab = tabName;
     if (tabName === 'quiz') {
-      this.tabSections.quiz.classList.remove('hidden');
-      this.tabSections.terms.classList.add('hidden');
-      this.tabButtons.quiz.classList.add('active');
-      this.tabButtons.terms.classList.remove('active');
+      this.tabSections.quiz?.classList.remove('hidden');
+      this.tabSections.terms?.classList.add('hidden');
+      this.tabButtons.quiz?.classList.add('active');
+      this.tabButtons.terms?.classList.remove('active');
       this.updateHomeStats();
     } else {
-      this.tabSections.quiz.classList.add('hidden');
-      this.tabSections.terms.classList.remove('hidden');
-      this.tabButtons.quiz.classList.remove('active');
-      this.tabButtons.terms.classList.add('active');
+      this.tabSections.quiz?.classList.add('hidden');
+      this.tabSections.terms?.classList.remove('hidden');
+      this.tabButtons.quiz?.classList.remove('active');
+      this.tabButtons.terms?.classList.add('active');
       this.renderTermsList();
     }
   }
 
-  // ==================== 問題集・成績管理 (Stats & Snapshots) ====================
+  // ==================== 成績＆履歴管理 ====================
+  getQuestions() {
+    return window.QUESTIONS || [];
+  }
+
+  getTerms() {
+    return window.TERMS || [];
+  }
+
   getWrongIds() {
     const data = localStorage.getItem(this.storageKeys.wrongIds);
     return data ? JSON.parse(data) : [];
@@ -85,7 +98,6 @@ class GKenteiMasterApp {
     return data ? JSON.parse(data) : {};
   }
 
-  // 問題ごとの成績更新＆苦手判定
   recordAnswerStats(questionId, isCorrect) {
     const stats = this.getStats();
     if (!stats[questionId]) {
@@ -97,21 +109,19 @@ class GKenteiMasterApp {
     if (isCorrect) item.correct += 1;
     item.rate = Math.round((item.correct / item.answered) * 100);
 
-    // 苦手判定（automatic / provisional）
     if (item.answered < 2) {
-      item.status = 'insufficient'; // データ不足
+      item.status = 'insufficient';
     } else if (item.rate >= 80) {
-      item.status = 'master';       // 得意 (80%以上)
+      item.status = 'master';
     } else if (item.rate >= 60) {
-      item.status = 'review';       // 要復習 (60-79%)
+      item.status = 'review';
     } else {
-      item.status = 'weak';         // 苦手 (60%未満)
+      item.status = 'weak';
     }
 
     localStorage.setItem(this.storageKeys.stats, JSON.stringify(stats));
   }
 
-  // スナップショット保存（問題文・選択肢・正解・解説・解いた日時）
   saveSessionSnapshot() {
     const snapshots = JSON.parse(localStorage.getItem(this.storageKeys.historySnapshots) || '[]');
     const sessionData = {
@@ -119,10 +129,9 @@ class GKenteiMasterApp {
       mode: this.currentMode,
       score: this.score,
       total: this.activeQuestions.length,
-      answers: this.sessionAnswers // 問題文・選択肢・解説を丸ごと保持
+      answers: this.sessionAnswers
     };
     snapshots.unshift(sessionData);
-    // 最新50回分まで保存
     if (snapshots.length > 50) snapshots.pop();
     localStorage.setItem(this.storageKeys.historySnapshots, JSON.stringify(snapshots));
   }
@@ -153,12 +162,13 @@ class GKenteiMasterApp {
   }
 
   switchScreen(screenName) {
-    Object.values(this.screens).forEach(el => el.classList.add('hidden'));
-    this.screens[screenName].classList.remove('hidden');
+    Object.values(this.screens).forEach(el => el?.classList.add('hidden'));
+    this.screens[screenName]?.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   updateHomeStats() {
+    const questions = this.getQuestions();
     const stats = this.getStats();
     let weakCount = 0;
     let masterCount = 0;
@@ -170,21 +180,24 @@ class GKenteiMasterApp {
       if (stats[id].status === 'master') masterCount++;
     });
 
-    document.getElementById('total-pool-count').textContent = QUESTIONS.length;
+    const poolEl = document.getElementById('total-pool-count');
+    if (poolEl) poolEl.textContent = questions.length;
     document.getElementById('stat-weak-count').textContent = weakCount;
     document.getElementById('stat-master-count').textContent = masterCount;
-    document.getElementById('stat-answered-count').textContent = `${answeredCount}/${QUESTIONS.length}`;
+    document.getElementById('stat-answered-count').textContent = `${answeredCount}/${questions.length}`;
 
-    // 復習ボタン制御
     const wrongCount = this.getWrongIds().length;
     const reviewBtn = document.getElementById('btn-review');
-    reviewBtn.textContent = wrongCount === 0 ? '❌ 復習するミス問題はありません' : `❌ 直近ミス問題を復習 (${wrongCount}問)`;
-    reviewBtn.style.opacity = wrongCount === 0 ? '0.5' : '1';
+    if (reviewBtn) {
+      reviewBtn.textContent = wrongCount === 0 ? '❌ 復習するミス問題はありません' : `❌ 直近ミス問題を復習 (${wrongCount}問)`;
+      reviewBtn.style.opacity = wrongCount === 0 ? '0.5' : '1';
+    }
 
-    // 苦手特訓ボタン制御
     const weakBtn = document.getElementById('btn-weak');
-    weakBtn.textContent = weakCount === 0 ? '⚠️ 苦手特訓 (該当なし)' : `⚠️ 苦手特訓モード (${weakCount}問)`;
-    weakBtn.style.opacity = weakCount === 0 ? '0.5' : '1';
+    if (weakBtn) {
+      weakBtn.textContent = weakCount === 0 ? '⚠️ 苦手特訓 (該当なし)' : `⚠️ 苦手特訓モード (${weakCount}問)`;
+      weakBtn.style.opacity = weakCount === 0 ? '0.5' : '1';
+    }
   }
 
   showHome() {
@@ -192,15 +205,16 @@ class GKenteiMasterApp {
     this.switchScreen('home');
   }
 
-  // ==================== クイズ出題ロジック ====================
+  // ==================== クイズ出題 ====================
   startQuiz(mode) {
+    const questions = this.getQuestions();
     this.currentMode = mode;
     this.currentIndex = 0;
     this.score = 0;
     this.sessionAnswers = [];
 
     if (mode === 'random') {
-      const shuffled = [...QUESTIONS].sort(() => 0.5 - Math.random());
+      const shuffled = [...questions].sort(() => 0.5 - Math.random());
       this.activeQuestions = shuffled.slice(0, 10);
     } else if (mode === 'wrong') {
       const wrongIds = this.getWrongIds();
@@ -208,7 +222,7 @@ class GKenteiMasterApp {
         alert('現在、復習対象の問題はありません！');
         return;
       }
-      this.activeQuestions = QUESTIONS.filter(q => wrongIds.includes(q.id));
+      this.activeQuestions = questions.filter(q => wrongIds.includes(q.id));
     } else if (mode === 'weak') {
       const stats = this.getStats();
       const weakIds = Object.keys(stats)
@@ -219,7 +233,7 @@ class GKenteiMasterApp {
         alert('正答率60%未満の「苦手問題」は現在ありません！素晴らしいです！');
         return;
       }
-      this.activeQuestions = QUESTIONS.filter(q => weakIds.includes(q.id));
+      this.activeQuestions = questions.filter(q => weakIds.includes(q.id));
     }
 
     this.switchScreen('quiz');
@@ -264,7 +278,6 @@ class GKenteiMasterApp {
     const isCorrect = selectedIndex === q.answer;
     const optionButtons = document.querySelectorAll('.option-btn');
 
-    // スナップショット用データ
     this.sessionAnswers.push({
       id: q.id,
       question: q.question,
@@ -275,7 +288,6 @@ class GKenteiMasterApp {
       explanation: q.explanation
     });
 
-    // 成績・苦手判定を記録
     this.recordAnswerStats(q.id, isCorrect);
 
     optionButtons.forEach((btn, idx) => {
@@ -321,9 +333,7 @@ class GKenteiMasterApp {
   }
 
   showResult() {
-    // スナップショットを永続化保存
     this.saveSessionSnapshot();
-
     this.switchScreen('result');
     const total = this.activeQuestions.length;
     document.getElementById('result-score-text').textContent = `${this.score} / ${total}`;
@@ -341,13 +351,14 @@ class GKenteiMasterApp {
 
     const wrongIds = this.getWrongIds();
     const reviewBtn = document.getElementById('btn-result-review');
-    reviewBtn.style.display = wrongIds.length > 0 ? 'block' : 'none';
+    if (reviewBtn) reviewBtn.style.display = wrongIds.length > 0 ? 'block' : 'none';
 
     this.renderReviewList();
   }
 
   renderReviewList() {
     const container = document.getElementById('review-list-container');
+    if (!container) return;
     container.innerHTML = '';
     const badges = ['A', 'B', 'C', 'D'];
 
@@ -430,14 +441,17 @@ class GKenteiMasterApp {
     }
   }
 
-  // ==================== 【B】単語帳機能 (Terms) ====================
+  // ==================== 【B】単語帳（3Dフリップ＆双方向） ====================
   getLearnedTermIds() {
     const data = localStorage.getItem(this.storageKeys.learnedTerms);
     return data ? JSON.parse(data) : [];
   }
 
   toggleTermLearned(termId, event) {
-    event.stopPropagation(); // カード反転イベントの伝播を防止
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
     const ids = new Set(this.getLearnedTermIds());
     if (ids.has(termId)) {
       ids.delete(termId);
@@ -448,7 +462,20 @@ class GKenteiMasterApp {
     this.renderTermsList();
   }
 
+  // 表裏のモード反転（用語➔意味 ⇄ 意味➔用語）
+  toggleCardMode() {
+    this.cardFrontMode = (this.cardFrontMode === 'term') ? 'meaning' : 'term';
+    const labelEl = document.getElementById('terms-mode-label');
+    if (labelEl) {
+      labelEl.textContent = (this.cardFrontMode === 'term')
+        ? 'モード: 【表】用語 ➔ 【裏】意味'
+        : 'モード: 【表】意味 ➔ 【裏】用語';
+    }
+    this.renderTermsList();
+  }
+
   renderTermsList() {
+    const terms = this.getTerms();
     const searchKeyword = (document.getElementById('terms-search-input')?.value || '').trim().toLowerCase();
     const chapterFilter = document.getElementById('terms-chapter-filter')?.value || 'all';
     const statusFilter = document.getElementById('terms-status-filter')?.value || 'all';
@@ -459,23 +486,19 @@ class GKenteiMasterApp {
 
     container.innerHTML = '';
 
-    // フィルタリング処理
-    const filtered = TERMS.filter(t => {
-      // 検索キーワード
+    const filtered = terms.filter(t => {
       const matchKeyword = t.term.toLowerCase().includes(searchKeyword) || t.meaning.toLowerCase().includes(searchKeyword);
-      // 章フィルター
       const matchChapter = chapterFilter === 'all' || String(t.chapter) === chapterFilter;
-      // 習得ステータスフィルター
       const isLearned = learnedIds.has(t.id);
       const matchStatus = statusFilter === 'all' || (statusFilter === 'learned' && isLearned) || (statusFilter === 'unlearned' && !isLearned);
-
       return matchKeyword && matchChapter && matchStatus;
     });
 
-    // サマリー更新
-    document.getElementById('terms-count-info').textContent = `表示中: ${filtered.length} / 全${TERMS.length}語`;
-    const learnRate = TERMS.length > 0 ? Math.round((learnedIds.size / TERMS.length) * 100) : 0;
-    document.getElementById('terms-progress-info').textContent = `習得率: ${learnRate}% (${learnedIds.size}/${TERMS.length})`;
+    const countInfo = document.getElementById('terms-count-info');
+    if (countInfo) countInfo.textContent = `表示中: ${filtered.length} / 全${terms.length}語`;
+    const learnRate = terms.length > 0 ? Math.round((learnedIds.size / terms.length) * 100) : 0;
+    const progInfo = document.getElementById('terms-progress-info');
+    if (progInfo) progInfo.textContent = `習得率: ${learnRate}% (${learnedIds.size}/${terms.length})`;
 
     if (filtered.length === 0) {
       container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px 0;">一致する用語が見つかりません</div>`;
@@ -484,30 +507,60 @@ class GKenteiMasterApp {
 
     filtered.forEach(item => {
       const isLearned = learnedIds.has(item.id);
-      const card = document.createElement('div');
-      card.className = `term-card ${isLearned ? 'is-learned' : ''}`;
+
+      // モードに応じた表面・裏面の内容決定
+      const frontTitle = (this.cardFrontMode === 'term') ? item.term : item.meaning;
+      const frontIsMeaning = (this.cardFrontMode === 'meaning');
+      const backTitle = (this.cardFrontMode === 'term') ? item.meaning : item.term;
+      const backIsMeaning = (this.cardFrontMode === 'term');
+
+      // 3Dラッパー
+      const wrapper = document.createElement('div');
+      wrapper.className = `flashcard-wrapper ${isLearned ? 'is-learned' : ''}`;
       
-      // カードタップで意味をめくる（トグル）
-      card.onclick = () => {
-        card.classList.toggle('show-meaning');
+      // クリックで3D裏返し！
+      wrapper.onclick = () => {
+        wrapper.classList.toggle('flipped');
       };
 
-      card.innerHTML = `
-        <div class="term-card-header">
-          <span class="term-chapter-badge">第${item.chapter}章</span>
-          <button class="term-learn-btn" onclick="app.toggleTermLearned(${item.id}, event)" title="${isLearned ? '未習得に戻す' : '習得済みにする'}">
-            ${isLearned ? '⭐️' : '☆'}
-          </button>
+      wrapper.innerHTML = `
+        <div class="flashcard-inner">
+          <!-- 表面 -->
+          <div class="flashcard-face flashcard-front">
+            <div class="card-top-row">
+              <span class="term-chapter-badge">第${item.chapter}章</span>
+              <span class="side-label">【表面】</span>
+              <button class="term-learn-btn" onclick="app.toggleTermLearned(${item.id}, event)">
+                ${isLearned ? '⭐️' : '☆'}
+              </button>
+            </div>
+            <div class="card-center-text ${frontIsMeaning ? 'meaning-style' : ''}">${frontTitle}</div>
+            <div class="card-bottom-row">
+              <span>🔄 タップで裏面を見る</span>
+            </div>
+          </div>
+
+          <!-- 裏面 -->
+          <div class="flashcard-face flashcard-back">
+            <div class="card-top-row">
+              <span class="term-chapter-badge">第${item.chapter}章</span>
+              <span class="side-label">【裏面：答え】</span>
+              <button class="term-learn-btn" onclick="app.toggleTermLearned(${item.id}, event)">
+                ${isLearned ? '⭐️' : '☆'}
+              </button>
+            </div>
+            <div class="card-center-text ${backIsMeaning ? 'meaning-style' : ''}">${backTitle}</div>
+            <div class="card-bottom-row">
+              <span>🔄 タップで表面に戻す</span>
+            </div>
+          </div>
         </div>
-        <div class="term-title">${item.term}</div>
-        <div class="term-tap-hint">タップで意味を確認 ▾</div>
-        <div class="term-meaning">${item.meaning}</div>
       `;
 
-      container.appendChild(card);
+      container.appendChild(wrapper);
     });
   }
 }
 
-// アプリ起動
-const app = new GKenteiMasterApp();
+// グローバルにインスタンス展開
+window.app = new GKenteiMasterApp();
