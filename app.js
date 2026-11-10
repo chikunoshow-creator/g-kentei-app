@@ -19,7 +19,6 @@ class GKenteiMasterApp {
     this.initDOM();
     this.updateHomeStats();
     
-    // 安全に描画
     setTimeout(() => {
       this.renderTermsList();
     }, 100);
@@ -49,7 +48,20 @@ class GKenteiMasterApp {
     setTimeout(() => this.toastEl.classList.remove('show'), 2500);
   }
 
-  // ==================== タブ切り替え ====================
+  getQuestions() {
+    if (typeof QUESTIONS !== 'undefined' && Array.isArray(QUESTIONS)) {
+      return QUESTIONS;
+    }
+    return [];
+  }
+
+  getTerms() {
+    if (typeof TERMS !== 'undefined' && Array.isArray(TERMS)) {
+      return TERMS;
+    }
+    return [];
+  }
+
   switchMainTab(tabName) {
     this.currentMainTab = tabName;
     if (tabName === 'quiz') {
@@ -65,21 +77,6 @@ class GKenteiMasterApp {
       this.tabButtons.terms?.classList.add('active');
       this.renderTermsList();
     }
-  }
-
-  // ==================== 安全なデータ取得（★ここを修正！） ====================
-  getQuestions() {
-    try {
-      if (typeof QUESTIONS !== 'undefined') return QUESTIONS;
-    } catch (e) {}
-    return [];
-  }
-
-  getTerms() {
-    try {
-      if (typeof TERMS !== 'undefined') return TERMS;
-    } catch (e) {}
-    return [];
   }
 
   getWrongIds() {
@@ -163,7 +160,7 @@ class GKenteiMasterApp {
         await reg.unregister();
       }
     }
-    alert('最新のキャッシュを再読み込みします！');
+    alert('キャッシュを完全クリアして再読み込みします！');
     window.location.reload(true);
   }
 
@@ -188,9 +185,15 @@ class GKenteiMasterApp {
 
     const poolEl = document.getElementById('total-pool-count');
     if (poolEl) poolEl.textContent = questions.length;
-    document.getElementById('stat-weak-count').textContent = weakCount;
-    document.getElementById('stat-master-count').textContent = masterCount;
-    document.getElementById('stat-answered-count').textContent = `${answeredCount}/${questions.length}`;
+    
+    const weakEl = document.getElementById('stat-weak-count');
+    if (weakEl) weakEl.textContent = weakCount;
+    
+    const masterEl = document.getElementById('stat-master-count');
+    if (masterEl) masterEl.textContent = masterCount;
+    
+    const answeredEl = document.getElementById('stat-answered-count');
+    if (answeredEl) answeredEl.textContent = `${answeredCount}/${questions.length}`;
 
     const wrongCount = this.getWrongIds().length;
     const reviewBtn = document.getElementById('btn-review');
@@ -211,9 +214,14 @@ class GKenteiMasterApp {
     this.switchScreen('home');
   }
 
-  // ==================== クイズ出題 ====================
   startQuiz(mode) {
     const questions = this.getQuestions();
+    
+    if (questions.length === 0) {
+      alert('問題データ（questions.js）が読み込めていません。\nホーム画面の「🔄 最新版に強制更新」を押すか、少し待って再読み込みしてください！');
+      return;
+    }
+
     this.currentMode = mode;
     this.currentIndex = 0;
     this.score = 0;
@@ -242,6 +250,11 @@ class GKenteiMasterApp {
       this.activeQuestions = questions.filter(q => weakIds.includes(q.id));
     }
 
+    if (this.activeQuestions.length === 0) {
+      alert('出題できる問題がありませんでした。');
+      return;
+    }
+
     this.switchScreen('quiz');
     this.renderQuestion();
   }
@@ -249,6 +262,8 @@ class GKenteiMasterApp {
   renderQuestion() {
     this.isAnswered = false;
     const q = this.activeQuestions[this.currentIndex];
+    if (!q) return;
+
     const total = this.activeQuestions.length;
 
     let modeText = '⚡️ ランダム演習';
@@ -447,7 +462,7 @@ class GKenteiMasterApp {
     }
   }
 
-  // ==================== 【B】単語帳 ====================
+  // ==================== 単語帳（フッター撤廃＆カード内スクロール） ====================
   getLearnedTermIds() {
     const data = localStorage.getItem(this.storageKeys.learnedTerms);
     return data ? JSON.parse(data) : [];
@@ -512,20 +527,22 @@ class GKenteiMasterApp {
 
     filtered.forEach(item => {
       const isLearned = learnedIds.has(item.id);
-      const frontTitle = (this.cardFrontMode === 'term') ? item.term : item.meaning;
-      const frontIsMeaning = (this.cardFrontMode === 'meaning');
-      const backTitle = (this.cardFrontMode === 'term') ? item.meaning : item.term;
-      const backIsMeaning = (this.cardFrontMode === 'term');
+      const frontIsTerm = (this.cardFrontMode === 'term');
+
+      const frontTitle = frontIsTerm ? item.term : item.meaning;
+      const backTitle = frontIsTerm ? item.meaning : item.term;
 
       const wrapper = document.createElement('div');
       wrapper.className = `flashcard-wrapper ${isLearned ? 'is-learned' : ''}`;
       
+      // カードタップで3D反転
       wrapper.onclick = () => {
         wrapper.classList.toggle('flipped');
       };
 
       wrapper.innerHTML = `
         <div class="flashcard-inner">
+          <!-- 表面 -->
           <div class="flashcard-face flashcard-front">
             <div class="card-top-row">
               <span class="term-chapter-badge">第${item.chapter}章</span>
@@ -534,12 +551,12 @@ class GKenteiMasterApp {
                 ${isLearned ? '⭐️' : '☆'}
               </button>
             </div>
-            <div class="card-center-text ${frontIsMeaning ? 'meaning-style' : ''}">${frontTitle}</div>
-            <div class="card-bottom-row">
-              <span>🔄 タップで裏面を見る</span>
+            <div class="card-content-area">
+              <div class="${frontIsTerm ? 'card-text-term' : 'card-text-meaning'}">${frontTitle}</div>
             </div>
           </div>
 
+          <!-- 裏面 -->
           <div class="flashcard-face flashcard-back">
             <div class="card-top-row">
               <span class="term-chapter-badge">第${item.chapter}章</span>
@@ -548,9 +565,8 @@ class GKenteiMasterApp {
                 ${isLearned ? '⭐️' : '☆'}
               </button>
             </div>
-            <div class="card-center-text ${backIsMeaning ? 'meaning-style' : ''}">${backTitle}</div>
-            <div class="card-bottom-row">
-              <span>🔄 タップで表面に戻す</span>
+            <div class="card-content-area">
+              <div class="${frontIsTerm ? 'card-text-meaning' : 'card-text-term'}">${backTitle}</div>
             </div>
           </div>
         </div>
@@ -561,5 +577,5 @@ class GKenteiMasterApp {
   }
 }
 
-// グローバル展開
-window.app = new GKenteiMasterApp();
+var app = new GKenteiMasterApp();
+window.app = app;

@@ -144,10 +144,15 @@
           </select>
         </div>
 
-        <!-- ★双方向切替バー -->
+        <!-- 双方向切替バー -->
         <div class="terms-mode-toggle">
           <span id="terms-mode-label">モード: 【表】用語 ➔ 【裏】意味</span>
           <button class="terms-mode-btn" onclick="app.toggleCardMode()">⇄ 方向反転</button>
+        </div>
+
+        <!-- ★ボスのアイデア：上部集約ヒントラベル -->
+        <div class="terms-hint-label">
+          💡 カードをタップすると表裏が切り替わります
         </div>
 
         <div class="terms-summary">
@@ -164,12 +169,10 @@
 
   <div id="toast" class="toast">コピーしました！</div>
 
-  <!-- スクリプト読み込み -->
   <script src="questions.js"></script>
   <script src="terms.js"></script>
   <script src="app.js"></script>
 
-  <!-- PWA Service Worker強制更新 -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
